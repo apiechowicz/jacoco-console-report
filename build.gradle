@@ -1,13 +1,24 @@
 plugins {
     id 'groovy'
+    id 'java-gradle-plugin'
 }
 
-dependencies {
-    compile 'org.codehaus.groovy:groovy-all:2.4.15'
+group "${groupId}"
+version "${version}"
 
-    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+dependencies {
+    compile gradleApi()
 }
 
 repositories {
     jcenter()
+}
+
+gradlePlugin {
+    plugins {
+        jacococorePlugin {
+            id = "${groupId}.${artifactId}.JacococorePlugin"
+            implementationClass = "${groupId}.${artifactId}.JacococorePlugin"
+        }
+    }
 }

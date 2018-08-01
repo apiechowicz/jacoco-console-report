@@ -1,1 +1,1 @@
-rootProject.name = 'jacoco-console-report'
+rootProject.name = "${artifactId}"
