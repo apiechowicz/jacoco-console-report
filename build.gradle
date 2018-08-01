@@ -1,6 +1,7 @@
 plugins {
     id 'groovy'
     id 'java-gradle-plugin'
+    id 'maven-publish'
 }
 
 group "${groupId}"
@@ -17,8 +18,19 @@ repositories {
 gradlePlugin {
     plugins {
         jacococorePlugin {
-            id = "${groupId}.${artifactId}.JacococorePlugin"
-            implementationClass = "${groupId}.${artifactId}.JacococorePlugin"
+            id = "${groupId}.${artifactId}.${pluginName}"
+            implementationClass = "${groupId}.${artifactId}.${pluginName}"
+        }
+    }
+}
+
+publishing {
+    publications {
+        pluginPublication(MavenPublication) {
+            groupId = "${groupId}"
+            artifactId = "${artifactId}"
+            version = "${version}"
+            from components.java
         }
     }
 }
