@@ -6,9 +6,12 @@ import org.gradle.api.Project
 class JacococorePlugin implements Plugin<Project> {
     @Override
     void apply(Project target) {
+        def extension = target.extensions.create('jacococore', JacococorePluginExtension, target)
+
         target.task('jacocoConsoleReport') {
             doLast {
-                JacocoXmlParser.logReport("${target.buildDir}/reports/jacoco/test/jacocoTestReport.xml")
+                def parser = new JacocoXmlParser(extension.inputFile, extension.classNameColumnWidth, extension.counterColumnPadding)
+                parser.createConsoleReport()
             }
         }
     }

@@ -14,35 +14,50 @@ import java.nio.file.Paths
 
 class JacocoXmlParser {
     private static final Logger log = Logging.getLogger(JacocoXmlParser.class)
-    private static final int classNameColumnWidth = 43
-    private static final int columnPadding = 2
     private static final List<String> counterNames = ['INSTRUCTION', 'BRANCH', 'LINE', 'COMPLEXITY', 'METHOD', 'CLASS']
             .asImmutable()
-    private static final Map<String, Integer> counterColumnWidths = counterNames.collectEntries {
-        [(it): calculateWidth(it)]
-    }.asImmutable()
-    private static final int totalWidth = classNameColumnWidth + counterColumnWidths.inject(0) { result, key, value -> result + value }
-    private static final String boldLine = '=' * totalWidth
-    private static final String dottedLine = ' .' * (totalWidth / 2)
-    private static final String line = '-' * totalWidth
-    private static final String tableHeader = createTableHeader()
-    private static final String notApplicable = 'n/a'
 
-    private static int calculateWidth(String string) {
-        int minimalColumnLength = Math.max(string.length(), '100.0%'.length())
-        minimalColumnLength + columnPadding
+    private final String inputFile
+    private final int classNameColumnWidth
+    private final int counterColumnPadding
+    private final Map<String, Integer> counterColumnWidths
+    private final int totalWidth
+    private final String boldLine
+    private final String dottedLine
+    private final String line
+    private final String tableHeader
+    private final String notApplicable
+
+    JacocoXmlParser(String inputFile, int classNameColumnWidth, int counterColumnPadding) {
+        this.inputFile = inputFile
+        this.classNameColumnWidth = classNameColumnWidth
+        this.counterColumnPadding = counterColumnPadding
+        this.counterColumnWidths = counterNames.collectEntries {
+            [(it): calculateWidth(it)]
+        }.asImmutable()
+        this.totalWidth = classNameColumnWidth + counterColumnWidths.inject(0) { result, key, value -> result + value }
+        this.boldLine = '=' * totalWidth
+        this.dottedLine = ' .' * (totalWidth / 2)
+        this.line = '-' * totalWidth
+        this.tableHeader = createTableHeader()
+        this.notApplicable = 'n/a'
     }
 
-    private static String createTableHeader() {
+    private int calculateWidth(String string) {
+        int minimalColumnLength = Math.max(string.length(), '100.0%'.length())
+        minimalColumnLength + counterColumnPadding
+    }
+
+    private String createTableHeader() {
         StringBuffer out = new StringBuffer('Class name'.center(classNameColumnWidth))
         counterNames.each { out << it.toLowerCase().capitalize().padLeft(counterColumnWidths.get(it)) }
         out.toString()
     }
 
-    static void logReport(String inputPath) {
-        final Path path = Paths.get(inputPath)
+    void createConsoleReport() {
+        final Path path = Paths.get(inputFile)
         if (!Files.isRegularFile(path)) {
-            throw new FileNotFoundException("Input file '${inputPath.toString()}' was not found.")
+            throw new FileNotFoundException("Input file '${inputFile.toString()}' was not found.")
         }
         if (!path.toString().endsWith('.xml')) {
             throw new UnsupportedDataTypeException('Input file must be Jacoco report in xml format.')
@@ -50,7 +65,7 @@ class JacocoXmlParser {
         parseXml(path)
     }
 
-    private static void parseXml(Path path) throws SAXParseException {
+    private void parseXml(Path path) throws SAXParseException {
         log.lifecycle('Xml file found. Generating console report for Jacoco.')
         GPathResult jacocoReport = getParser().parse(path.toFile())
         processPackageStats(jacocoReport)
@@ -64,7 +79,7 @@ class JacocoXmlParser {
         parser
     }
 
-    private static void processPackageStats(GPathResult report) {
+    private void processPackageStats(GPathResult report) {
         printSectionHeader('Package coverage statistics:')
         report.childNodes()
                 .findAll { nodeNameEquals(it as Node, 'package') }
@@ -72,7 +87,7 @@ class JacocoXmlParser {
                 .forEach { processPackageNode(it as Node) }
     }
 
-    private static void printSectionHeader(String title) {
+    private void printSectionHeader(String title) {
         log.lifecycle(boldLine)
         log.lifecycle(title.center(totalWidth))
         log.lifecycle(boldLine)
@@ -86,7 +101,7 @@ class JacocoXmlParser {
         node.attributes().get('name')
     }
 
-    private static void processPackageNode(Node packageNode) {
+    private void processPackageNode(Node packageNode) {
         log.lifecycle('Package name: ' + getNodeName(packageNode))
         log.lifecycle(tableHeader)
         processClassNodes(packageNode)
@@ -95,14 +110,14 @@ class JacocoXmlParser {
         log.lifecycle(line)
     }
 
-    private static void processClassNodes(Node packageNode) {
+    private void processClassNodes(Node packageNode) {
         packageNode.childNodes()
                 .findAll { nodeNameEquals(it as Node, 'class') }
                 .sort { a, b -> getNodeName(a) <=> getNodeName(b) }
                 .forEach { processClassNode(it as Node) }
     }
 
-    private static void processClassNode(Node classNode) {
+    private void processClassNode(Node classNode) {
         StringBuffer out = new StringBuffer(getClassName(classNode).padRight(classNameColumnWidth))
         appendCountersData(classNode.childNodes(), out)
         log.lifecycle(out.toString())
@@ -114,11 +129,11 @@ class JacocoXmlParser {
                 .last()
     }
 
-    private static void appendCountersData(Iterator<Node> nodeIterator, StringBuffer out) {
+    private void appendCountersData(Iterator<Node> nodeIterator, StringBuffer out) {
         counterNames.each { appendCounterData(nodeIterator, it, out) }
     }
 
-    private static void appendCounterData(Iterator<Node> nodeIterator, String counterName, StringBuffer out) {
+    private void appendCounterData(Iterator<Node> nodeIterator, String counterName, StringBuffer out) {
         Node counterNode = nodeIterator.find { it.attributes().get('type') == counterName } as Node
         String counterValue = counterNode != null ? calculatePercentageValue(counterNode) : notApplicable
         out << counterValue.padLeft(counterColumnWidths.get(counterName))
@@ -132,13 +147,13 @@ class JacocoXmlParser {
         "$percentage%"
     }
 
-    private static void processPackageStats(Node packageNode) {
+    private void processPackageStats(Node packageNode) {
         StringBuffer out = new StringBuffer('Package total:'.padRight(classNameColumnWidth))
         appendCountersData(packageNode.childNodes(), out)
         log.lifecycle(out.toString())
     }
 
-    private static void processProjectStats(GPathResult report) {
+    private void processProjectStats(GPathResult report) {
         printSectionHeader('Project coverage statistics:')
         log.lifecycle(tableHeader)
         StringBuffer out = new StringBuffer('Project total:'.padRight(classNameColumnWidth))
