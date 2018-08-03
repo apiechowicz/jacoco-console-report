@@ -19,7 +19,7 @@ repositories {
 gradlePlugin {
     plugins {
         jacococorePlugin {
-            id = "${groupId}.${artifactId}.${pluginName}"
+            id = "${groupId}.${artifactId}"
             implementationClass = "${groupId}.${artifactId}.${pluginName}"
         }
     }
@@ -39,7 +39,7 @@ publishing {
 pluginBundle {
     website = "${website}"
     vcsUrl = "${vcsUrl}"
-    description = 'Plugin for printing Jacoco coverage report to console'
+    description = 'Gradle plugin for printing Jacoco coverage report to console'
     tags = ['jacoco', 'console', 'report', 'reporting']
 
     plugins {
