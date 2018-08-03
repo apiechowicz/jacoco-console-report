@@ -2,6 +2,7 @@ plugins {
     id 'groovy'
     id 'java-gradle-plugin'
     id 'maven-publish'
+    id 'com.gradle.plugin-publish' version '0.10.0'
 }
 
 group "${groupId}"
@@ -31,6 +32,19 @@ publishing {
             artifactId = "${artifactId}"
             version = "${version}"
             from components.java
+        }
+    }
+}
+
+pluginBundle {
+    website = "${website}"
+    vcsUrl = "${vcsUrl}"
+    description = 'Plugin for printing Jacoco coverage report to console'
+    tags = ['jacoco', 'console', 'report', 'reporting']
+
+    plugins {
+        jacococorePlugin {
+            displayName = 'Jacoco Console Report plugin'
         }
     }
 }
